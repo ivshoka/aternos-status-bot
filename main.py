@@ -1,3 +1,5 @@
+pip install mcstatus requests discord.py
+
 import time
 import requests
 from mcstatus import JavaServer
