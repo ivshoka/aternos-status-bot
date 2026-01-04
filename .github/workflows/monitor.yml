@@ -34,6 +34,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Actions"
+          git pull --rebase
           git add status.json
           git commit -m "Update server status" || echo "No changes to commit"
           git push
