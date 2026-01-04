@@ -1,0 +1,36 @@
+name: Aternos Monitor
+
+on:
+  schedule:
+    - cron: "* * * * *"   # runs every 1 minute
+  workflow_dispatch:       # lets you run it manually
+
+jobs:
+  check_server:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Run checker
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: python3 checker.py
+
+      - name: Commit updated status
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Actions"
+          git add status.json
+          git commit -m "Update server status" || echo "No changes to commit"
+          git push
