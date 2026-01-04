@@ -1,5 +1,8 @@
 name: Aternos Monitor
 
+permissions:
+  contents: write
+
 on:
   schedule:
     - cron: "* * * * *"   # runs every 1 minute
