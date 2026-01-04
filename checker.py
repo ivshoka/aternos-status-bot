@@ -1,15 +1,15 @@
 import socket
-import time
 import requests
+import json
+import os
 
-HOSTNAME = "sigmalopolis.aternos.me"  # your Aternos hostname
-PORT = 43065                          # your server port
-WEBHOOK_URL = "https://discord.com/api/webhooks/1456854341800558675/C4nxyBartFND0TmYVHpBn3WNP36bpbRKFnFRQz-Sy7W1mRY_GAPeUcd9kCledfqj6cQv" # discord webhook
+HOSTNAME = "sigmalopolis.aternos.me"
+PORT = 43065
+WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")  # pulled from GitHub secrets
 
-CHECK_INTERVAL = 60  # seconds
+STATUS_FILE = "status.json"
 
 def is_port_open(ip, port):
-    """Try connecting to the Minecraft server port."""
     try:
         sock = socket.create_connection((ip, port), timeout=4)
         sock.close()
@@ -18,33 +18,33 @@ def is_port_open(ip, port):
         return False
 
 def send_discord(message):
-    """Send a message to Discord."""
     data = {"content": message}
     requests.post(WEBHOOK_URL, json=data)
 
-def main():
-    print("Starting Aternos monitor...")
+# Load last known status
+if os.path.exists(STATUS_FILE):
+    with open(STATUS_FILE, "r") as f:
+        last_status = json.load(f).get("status")
+else:
     last_status = None
 
-    while True:
-        try:
-            # Resolve IP each time in case Aternos changes it
-            ip = socket.gethostbyname(HOSTNAME)
+# Resolve IP
+ip = socket.gethostbyname(HOSTNAME)
 
-            online = is_port_open(ip, PORT)
+# Check server status
+online = is_port_open(ip, PORT)
 
-            if online and last_status != "online":
-                send_discord(f"🟢 **Server is ONLINE!**\n`{HOSTNAME}:{PORT}`")
-                last_status = "online"
+if online and last_status != "online":
+    send_discord(f"🟢 **Aternos Server is ONLINE!**\n`{HOSTNAME}:{PORT}`")
+    current_status = "online"
 
-            elif not online and last_status != "offline":
-                send_discord(f"🔴 **Server is OFFLINE.**")
-                last_status = "offline"
+elif not online and last_status != "offline":
+    send_discord("🔴 **Aternos Server is OFFLINE.**")
+    current_status = "offline"
 
-        except Exception as e:
-            print("Error:", e)
+else:
+    current_status = last_status
 
-        time.sleep(CHECK_INTERVAL)
-
-if __name__ == "__main__":
-    main()
+# Save status for next run
+with open(STATUS_FILE, "w") as f:
+    json.dump({"status": current_status}, f)
